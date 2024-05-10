@@ -65,6 +65,7 @@ unsigned int keyboard_poll(void) {
  * @return decoded character entered by the keyboard or KEY_NULL
  *         for any character that cannot be decoded
  */
+#define MAX_POLLING_ATTEMPTS 1000 // Adjust the value as needed
 unsigned int keyboard_getc(void) {
     unsigned int c = KEY_NULL;
     int attempts = 0;
