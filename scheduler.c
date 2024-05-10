@@ -155,12 +155,25 @@ void scheduler_remove(proc_t *proc) {
  */
 void scheduler_sleep(proc_t *proc, int time) 
 {
-    ksyscall_sys_get_time();// Set the sleep time
-    ksyscall_proc_sleep(time); // Set the process state to SLEEPING
-    scheduler_remove(proc); // Remove the process from the scheduler
-    proc->scheduler_queue = &sleep_queue;// Add the proces to the sleep queue
-}
+    // Get the current system time
+    uint64_t current_time = ksyscall_sys_get_time();
 
+    // Set the wakeup time by adding sleep duration to the current time
+    uint64_t wakeup_time = current_time + time;
+
+    // Update process sleep attributes
+    proc->wakeup_time = wakeup_time;
+    proc->state = SLEEPING;
+
+    // Remove the process from the scheduler
+    scheduler_remove(proc);
+
+    // Add the process to the sleep queue
+    proc->scheduler_queue = &sleep_queue;
+    if (queue_in(proc->scheduler_queue, proc->pid) != 0) {
+        kernel_panic("Unable to add the process to the sleep queue");
+    }
+}
 /**
  * Initializes the scheduler, data structures, etc.
  */
@@ -170,7 +183,20 @@ void scheduler_init(void) {
     /* Initialize the run queue */
     queue_init(&run_queue);
 
+    /* Initialize the sleep queue */
+    queue_init(&sleep_queue);
+
     /* Register the timer callback */
     timer_callback_register(&scheduler_timer, 1, -1);
 }
 
+// Placeholder function for getting system time
+uint64_t ksyscall_sys_get_time() {
+    // Implement your code to get system time here
+    return 0; // Placeholder return value
+}
+
+// Placeholder function for putting process to sleep
+void ksyscall_proc_sleep(int time) {
+    // Implement your code to put process to sleep here
+}
