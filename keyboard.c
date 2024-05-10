@@ -33,15 +33,21 @@ void keyboard_init() {
  * @return raw character data from the keyboard
  */
 unsigned int keyboard_scan(void) {    
-    unsigned int c = inportb(0x60); // Read from keyboard port
-    if (c == 0xFFFFFFFF) { // Check for error (0xFFFFFFFF indicates failure)
-        kernel_log_error("Error reading from keyboard port");
-        return KEY_NULL;
-    }
-    kernel_log_info("keyboard_scan() returns: %10x\n", c);                  
-    return c;                         
-}    
+    unsigned int c;
+    int attempts = 0;
+    
+    do {
+        c = inportb(0x60); // Read from keyboard port
+        if (c == 0xFFFFFFFF) { // Check for error (0xFFFFFFFF indicates failure)
+            kernel_log_error("Error reading from keyboard port");
+            return KEY_NULL;
+        }
+        kernel_log_info("keyboard_scan() returns: %10x\n", c);
+        attempts++;
+    } while (c == KEY_NULL && attempts < MAX_POLLING_ATTEMPTS);
 
+    return c;
+}    
 /**
  * Polls for a keyboard character to be entered.
  *
