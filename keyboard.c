@@ -7,7 +7,7 @@
 #include "io.h"
 #include "kernel.h"
 #include "keyboard.h"
-
+#define MAX_POLLING_ATTEMPTS 1000 // 
 char ascii_values[] = {                                                 
       '\0', '\001', '\002', '\003', '\004', '\005', '\006', '\007',                         
      '\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',                       
@@ -65,7 +65,7 @@ unsigned int keyboard_poll(void) {
  * @return decoded character entered by the keyboard or KEY_NULL
  *         for any character that cannot be decoded
  */
-#define MAX_POLLING_ATTEMPTS 1000 // Adjust the value as needed
+
 unsigned int keyboard_getc(void) {
     unsigned int c = KEY_NULL;
     int attempts = 0;
