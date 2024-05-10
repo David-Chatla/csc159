@@ -33,11 +33,14 @@ void keyboard_init() {
  * @return raw character data from the keyboard
  */
 unsigned int keyboard_scan(void) {    
-    unsigned int c = KEY_NULL;        
-    c = inportb(0x60);                
-     kernel_log_info("keyboard_scan() returns: %10x\n",c);                  
-     return c;                         
- }    
+    unsigned int c = inportb(0x60); // Read from keyboard port
+    if (c == 0xFFFFFFFF) { // Check for error (0xFFFFFFFF indicates failure)
+        kernel_log_error("Error reading from keyboard port");
+        return KEY_NULL;
+    }
+    kernel_log_info("keyboard_scan() returns: %10x\n", c);                  
+    return c;                         
+}    
 
 /**
  * Polls for a keyboard character to be entered.
@@ -64,7 +67,14 @@ unsigned int keyboard_poll(void) {
  */
 unsigned int keyboard_getc(void) {
     unsigned int c = KEY_NULL;
-    while ((c = keyboard_poll()) == KEY_NULL);
+    int attempts = 0;
+    while ((c = keyboard_poll()) == KEY_NULL) {
+        attempts++;
+        // Add a condition to exit the loop if maximum attempts reached
+        if (attempts >= MAX_POLLING_ATTEMPTS) {
+            return KEY_NULL; // Or handle the condition as needed
+        }
+    }
     return c;
 }
 
