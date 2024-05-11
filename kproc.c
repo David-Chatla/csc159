@@ -271,18 +271,5 @@ void kproc_init(void) {
         kproc_attach_tty(pid, i);
     }
 
-    for (int i = 0; i < 3; i++) {
-        pid = kproc_create(prog_ping, "ping", PROC_TYPE_USER);
-        kernel_log_debug("Created ping process %d", pid);
-
-        kproc_attach_tty(pid, (TTY_MAX - (pid % 2) - 1));
-    }
-
-    for (int i = 0; i < 3; i++) {
-        pid = kproc_create(prog_pong, "pong", PROC_TYPE_USER);
-        kernel_log_debug("Created pong process %d", pid);
-
-        kproc_attach_tty(pid, (TTY_MAX - (pid % 2) - 1));
-    }
 }
 
