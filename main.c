@@ -48,7 +48,7 @@ int main(void) {
     ksyscall_init();
 
     // Initialize kernel semaphores
-//    ksemaphores_init();
+    ksemaphores_init();
 
     // Initialize kernel mutexes
     kmutexes_init();
