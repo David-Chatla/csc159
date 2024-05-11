@@ -47,12 +47,6 @@ int main(void) {
     // Initialize system calls
     ksyscall_init();
 
-    // Initialize kernel semaphores
-    ksemaphores_init();
-
-    // Initialize kernel mutexes
-    kmutexes_init();
-
     // Test initialization
     test_init();
 
