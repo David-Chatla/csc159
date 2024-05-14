@@ -8,6 +8,19 @@
 #include "kernel.h"
 #include "keyboard.h"
 
+char ascii_values[] = {                                                 
+      '\0', '\001', '\002', '\003', '\004', '\005', '\006', '\007',                         
+     '\010', '\011', '\012', '\013', '\014', '\015', '\016', '\017',                       
+      '\020', '\021', '\022', '\023', '\024', '\025', '\026', '\027',                    
+     '\030', '\031', '\032', '\033', '\034', '\035', '\036', '\037',                        
+       ' ', '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/',      
+     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ':', ';', '<', '=', '>', '?',              
+       '@', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',            
+      'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '[', '\\', ']', '^', '_',                 
+       '`', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',              
+      'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '{', '|', '}', '~', '\177'                                        
+  }; 
+
 /**
  * Initializes keyboard data structures and variables
  */
@@ -19,10 +32,13 @@ void keyboard_init() {
  * Scans for keyboard input and returns the raw character data
  * @return raw character data from the keyboard
  */
-unsigned int keyboard_scan(void) {
-    unsigned int c = KEY_NULL;
-    return c;
-}
+unsigned int keyboard_scan(void) {    
+    unsigned int c = KEY_NULL;        
+    c = inportb(0x60);                
+     kernel_log_info("keyboard_scan() r      
+      eturns: %10x\n",c);                  
+     return c;                         
+ }    
 
 /**
  * Polls for a keyboard character to be entered.
@@ -33,9 +49,14 @@ unsigned int keyboard_scan(void) {
  * @return decoded character or KEY_NULL (0) for any character
  *         that cannot be decoded
  */
-unsigned int keyboard_poll(void) {
-    unsigned int c = KEY_NULL;
-    return c;
+unsigned int keyboard_poll(void) {   
+   unsigned int c = KEY_NULL;        
+    if((c = keyboard_scan()) != KEY_NU
+      LL)                                           
+   {                                
+        c = keyboard_decode(c);                                   
+    }                                                             
+    return c;                                                     
 }
 
 /**
