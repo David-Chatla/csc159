@@ -38,6 +38,14 @@ void kernel_init(void) {
  */
 void kernel_log_error(char *msg, ...) {
     // Implement me
+    if(kernel_log_level < KERNEL_LOG_LEVEL_ERROR)
+        return;
+    printf("error");
+    va_list args;
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+    printf("\n");
 }
 
 /**
@@ -48,6 +56,14 @@ void kernel_log_error(char *msg, ...) {
  */
 void kernel_log_warn(char *msg, ...) {
     // Implement me
+    if(kernel_log_level < KERNEL_LOG_LEVEL_WARN)
+        return;
+    printf("warn");
+    va_list args;
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+    printf("\n");
 }
 
 /**
@@ -84,6 +100,14 @@ void kernel_log_info(char *msg, ...) {
  */
 void kernel_log_debug(char *msg, ...) {
     // Implement me
+     if(kernel_log_level < KERNEL_LOG_LEVEL_DEBUG)
+         return;
+     va_list args;
+     printf("debug");
+     va_start(args, msg);
+     vprintf(msg, args);
+     va_end(args);
+     printf("\n");
 }
 
 /**
@@ -94,6 +118,14 @@ void kernel_log_debug(char *msg, ...) {
  */
 void kernel_log_trace(char *msg, ...) {
     // Implement me
+    if(kernel_log_level < KERNEL_LOG_LEVEL_TRACE)
+        return;
+    printf("Trace");
+    va_list args;
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+    printf("\n");
 }
 
 /**
@@ -106,6 +138,12 @@ void kernel_log_trace(char *msg, ...) {
  * @param ... - variable arguments to pass in to the string format
  */
 void kernel_panic(char *msg, ...) {
+    va_list args;
+    va_start(args, msg);
+    vprintf(msg, args);
+    va_end(args);
+    vga_printf("%s %s", msg, args);
+
     // Trigger a breakpoint to inspect what caused the panic
     kernel_break();
 
@@ -201,7 +239,7 @@ void kernel_exit(void) {
     printf("Exiting %s...\n", OS_NAME);
 
     // Print to the VGA display
-
+    vga_printf("Exiting %s...\n", OS_NAME);
     // Exit
     exit(0);
 }
