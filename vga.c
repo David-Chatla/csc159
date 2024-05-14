@@ -421,3 +421,17 @@ void vga_scroll(void) {
     }
     vga_cursor_update();
 }
+
+/**
+ * Prints a formatted string to the VGA output
+ *
+ * @param fmt the string format
+ * @param ... variable argument list for the string format
+ * @return length of the string printed
+ */
+#define vga_printf(fmt, ...) { \
+    char _vga_printf_buf[VGA_WIDTH * VGA_HEIGHT] = {0}; \
+    snprintf(_vga_printf_buf, sizeof(_vga_printf_buf), (fmt), ##__VA_ARGS__); \
+    vga_puts(_vga_printf_buf); \
+}
+
