@@ -35,8 +35,7 @@ void keyboard_init() {
 unsigned int keyboard_scan(void) {    
     unsigned int c = KEY_NULL;        
     c = inportb(0x60);                
-     kernel_log_info("keyboard_scan() r      
-      eturns: %10x\n",c);                  
+     kernel_log_info("keyboard_scan() returns: %10x\n",c);                  
      return c;                         
  }    
 
@@ -51,8 +50,7 @@ unsigned int keyboard_scan(void) {
  */
 unsigned int keyboard_poll(void) {   
    unsigned int c = KEY_NULL;        
-    if((c = keyboard_scan()) != KEY_NU
-      LL)                                           
+    if((c = keyboard_scan()) != KEY_NULL)                                           
    {                                
         c = keyboard_decode(c);                                   
     }                                                             
