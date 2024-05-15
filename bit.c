@@ -12,7 +12,12 @@
  * @return number of bits that are set
  */
 unsigned int bit_count(unsigned int value) {
-    return 0;
+    unsigned int count = 0, number = value;
+    while(number > 0){
+        number>>=1;
+        count++;
+    }
+    return count;
 }
 
 /**
@@ -22,7 +27,7 @@ unsigned int bit_count(unsigned int value) {
  * @return 1 if set, 0 if not set
  */
 unsigned int bit_test(unsigned int value, int bit) {
-    return value;
+    return (( value >> (bit-1)) & 1);
 }
 
 /**
@@ -31,6 +36,8 @@ unsigned int bit_test(unsigned int value, int bit) {
  * @param bit - which bit to set
  */
 unsigned int bit_set(unsigned int value, int bit) {
+    unsigned int val = (value | (1<<(bit-1)));
+    value = val;
     return value;
 }
 
@@ -40,6 +47,8 @@ unsigned int bit_set(unsigned int value, int bit) {
  * @param bit - which bit to clear
  */
 unsigned int bit_clear(unsigned int value, int bit) {
+    unsigned int val = (value & (~(1<<(bit-1))));
+    value = val;
     return value;
 }
 
@@ -49,5 +58,7 @@ unsigned int bit_clear(unsigned int value, int bit) {
  * @param bit - which bit to toggle
  */
 unsigned int bit_toggle(unsigned int value, int bit) {
+    unsigned int val = (value ^ (1<<(bit-1)));
+    value = val;
     return value;
 }
