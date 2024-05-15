@@ -14,6 +14,16 @@ void vga_cursor_update(void);
 /**
  * Global variables in this file scope
  */
+static bool cursor_enabled = false;
+static int current_row = 0;
+static int current_col = 0;
+static int bg_color = VGA_COLOR_BLACK;
+static int fg_color = VGA_COLOR_LIGHT_GREY;
+
+/**
+* to navigate the cursor a value of 4 spaces when the tab is pressed
+*/
+#define TAB_STOP 4
 
 /**
  * Initializes the VGA driver and configuration
@@ -24,6 +34,7 @@ void vga_init(void) {
     kernel_log_info("Initializing VGA driver");
 
     // Clear the screen
+    vga_clear();
 }
 
 /**
@@ -32,6 +43,12 @@ void vga_init(void) {
 void vga_clear(void) {
     // Clear all character data, set the foreground and background colors
     // Set the cursor position to the top-left corner (0, 0)
+    for (int i = 0; i < VGA_HEIGHT * VGA_WIDTH; ++i) {
+        VGA_BASE[i] = VGA_CHAR(bg_color, fg_color, ' ');
+    }
+    current_row = 0;
+    current_col = 0;
+    vga_cursor_update();
 }
 
 /**
@@ -42,6 +59,9 @@ void vga_clear(void) {
  */
 void vga_clear_bg(int bg) {
     // Iterate through all VGA memory and set only the background color bits
+    for (int i = 0; i < VGA_HEIGHT * VGA_WIDTH; ++i) {
+        VGA_BASE[i] = (VGA_BASE[i] & 0x0F) | (bg << 4);
+    }
 }
 
 /**
@@ -52,6 +72,9 @@ void vga_clear_bg(int bg) {
  */
 void vga_clear_fg(int fg) {
     // Iterate through all VGA memory and set only the foreground color bits.
+    for (int i = 0; i < VGA_HEIGHT * VGA_WIDTH; ++i) {
+        VGA_BASE[i] = (VGA_BASE[i] & 0xF0) | fg;
+    }
 }
 
 /**
@@ -92,6 +115,14 @@ void vga_cursor_enable(void) {
     // enabled or disabled
 
     // Update the cursor location once it is enabled
+
+    //Phase 1 code @DevG
+    // Set cursor start and end registers to enable cursor
+    outportb(0x3D4, 0x0A);
+    outportb(0x3D5, (inportb(0x3D5) & 0xC0) | 0);
+    cursor_enabled = true;
+    vga_cursor_update();
+    
 }
 
 /**
@@ -117,13 +148,19 @@ void vga_cursor_disable(void) {
     // Since we may need to update the vga text mode cursor position in
     // the future, ensure that we track (via software) if the cursor is
     // enabled or disabled
+
+    // Phase 1 code @DevG
+    // Set cursor start and end registers to disable cursor
+    outportb(VGA_PORT_ADDR, 0x0A);
+    outportb(VGA_PORT_DATA, 0x20);
+    cursor_enabled = false;
 }
 
 /**
  * Indicates if the VGA text mode cursor is enabled or disabled
  */
 bool vga_cursor_enabled(void) {
-    return false;
+    return cursor_enabled;
 }
 
 /**
@@ -153,6 +190,13 @@ void vga_cursor_update(void) {
 
         // Set the VGA Cursor Location Low Register (0x0E)
         //   Should be the most significant byte (0x<00>??)
+    if (cursor_enabled) {
+        unsigned short pos = current_row * VGA_WIDTH + current_col;
+        outportb(VGA_PORT_ADDR, 0x0F);
+        outportb(VGA_PORT_DATA, (unsigned char)(pos & 0xFF));
+        outportb(VGA_PORT_ADDR, 0x0E);
+        outportb(VGA_PORT_DATA, (unsigned char)((pos >> 8) & 0xFF));
+    }    
 }
 
 /**
@@ -165,6 +209,9 @@ void vga_cursor_update(void) {
  */
 void vga_set_rowcol(int row, int col) {
     // Update the text mode cursor (if enabled)
+    current_row = (row >= 0 && row < VGA_HEIGHT) ? row : (row < 0 ? 0 : VGA_HEIGHT - 1);
+    current_col = (col >= 0 && col < VGA_WIDTH) ? col : (col < 0 ? 0 : VGA_WIDTH - 1);
+    vga_cursor_update();
 }
 
 /**
@@ -172,7 +219,7 @@ void vga_set_rowcol(int row, int col) {
  * @return integer value of the row (between 0 and VGA_HEIGHT-1)
  */
 int vga_get_row(void) {
-    return 0;
+    return current_row;
 }
 
 /**
@@ -180,7 +227,7 @@ int vga_get_row(void) {
  * @return integer value of the column (between 0 and VGA_WIDTH-1)
  */
 int vga_get_col(void) {
-    return 0;
+    return current_col;
 }
 
 /**
@@ -192,6 +239,7 @@ int vga_get_col(void) {
  * @param bg - background color
  */
 void vga_set_bg(int bg) {
+    bg_color = bg;
 }
 
 /**
@@ -199,7 +247,7 @@ void vga_set_bg(int bg) {
  * @return background color value
  */
 int vga_get_bg(void) {
-    return 0;
+    return bg_color;
 }
 
 /**
@@ -211,6 +259,7 @@ int vga_get_bg(void) {
  * @param color - background color
  */
 void vga_set_fg(int fg) {
+    fg_color = fg;
 }
 
 /**
@@ -218,7 +267,7 @@ void vga_set_fg(int fg) {
  * @return foreground color value
  */
 int vga_get_fg(void) {
-    return 0;
+    return fg_color;
 }
 
 /**
@@ -228,7 +277,16 @@ int vga_get_fg(void) {
  */
 void vga_setc(unsigned char c) {
     unsigned short *vga_buf = VGA_BASE;
-    vga_buf[0] = VGA_CHAR(VGA_COLOR_BLACK, VGA_COLOR_LIGHT_GREY, c);
+    vga_buf[current_row * VGA_WIDTH + current_col] = VGA_CHAR(bg_color, fg_color, c);
+    current_col++;
+    if (current_col >= VGA_WIDTH) {
+        current_col = 0;
+        current_row++;
+        if (current_row >= VGA_HEIGHT) {
+            current_row = 0;
+        }
+    }
+    vga_cursor_update();
 }
 
 /**
@@ -250,15 +308,45 @@ void vga_setc(unsigned char c) {
  */
 void vga_putc(unsigned char c) {
     unsigned short *vga_buf = VGA_BASE;
-    vga_buf[0] = VGA_CHAR(VGA_COLOR_BLACK, VGA_COLOR_LIGHT_GREY, c);
-
     // Handle scecial characters
-
     // Handle end of lines
-
     // Wrap-around to the top/left corner
-
     // Update the text mode cursor, if enabled
+    switch (c) {
+        case '\n':
+            current_row++;
+            current_col = 0;
+            break;
+        case '\r':
+            current_col = 0;
+            break;
+        case '\t':
+            // Tab character - Move to the next tab stop
+            current_col = (current_col + TAB_STOP) & ~(TAB_STOP - 1);
+            break;
+        case '\b':
+            // Backspace character
+            if (current_col > 0) {
+                current_col--;
+                vga_buf[current_row * VGA_WIDTH + current_col] = VGA_CHAR(bg_color, fg_color, ' ');
+            }
+            break;
+        default:
+            // Print any other character
+            vga_buf[current_row * VGA_WIDTH + current_col] = VGA_CHAR(bg_color, fg_color, c);
+            current_col++;
+            break;
+    }
+
+    // Handle wrapping
+    if (current_col >= VGA_WIDTH) {
+        current_col = 0;
+        current_row++;
+    }
+    if (current_row >= VGA_HEIGHT) {
+        current_row = 0;
+    }
+    vga_cursor_update();
 }
 
 /**
@@ -266,7 +354,11 @@ void vga_putc(unsigned char c) {
  *
  * @param s - string to print
  */
-void vga_puts(char *s) {
+void vga_puts(char *str) {
+    while (*str != '\0') {
+        vga_putc(*str);
+        str++;
+    }
 }
 
 /**
@@ -283,6 +375,8 @@ void vga_puts(char *s) {
  * @param c character to print
  */
 void vga_putc_at(int row, int col, int bg, int fg, unsigned char c) {
+    unsigned short *vga_buf = VGA_BASE;
+    vga_buf[row * VGA_WIDTH + col] = VGA_CHAR(bg, fg, c);
 }
 
 /**
@@ -299,5 +393,31 @@ void vga_putc_at(int row, int col, int bg, int fg, unsigned char c) {
  * @param s string to print
  */
 void vga_puts_at(int row, int col, int bg, int fg, char *s) {
+    unsigned short *vga_buf = VGA_BASE;
+    int i = 0;
+    while (s[i] != '\0') {
+        vga_buf[row * VGA_WIDTH + col + i] = VGA_CHAR(bg, fg, s[i]);
+        i++;
+    }
+
 }
 
+/**
+ * Scrolls the VGA text buffer up by one line
+ */
+void vga_scroll(void) {
+    unsigned short *vga_buf = VGA_BASE;
+    for (int i = 0; i < VGA_HEIGHT - 1; i++) {
+        for (int j = 0; j < VGA_WIDTH; j++) {
+            vga_buf[i * VGA_WIDTH + j] = vga_buf[(i + 1) * VGA_WIDTH + j];
+        }
+    }
+    for (int j = 0; j < VGA_WIDTH; j++) {
+        vga_buf[(VGA_HEIGHT - 1) * VGA_WIDTH + j] = VGA_CHAR(bg_color, fg_color, ' ');
+    }
+    current_row--;
+    if (current_row < 0) {
+        current_row = 0;
+    }
+    vga_cursor_update();
+}
